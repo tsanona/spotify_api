@@ -55,6 +55,7 @@ class Auth(object):
         if not self.tokens: 
             token = self.get_new_token(scope, False)
             self.tokens = token
+            json.dump(token, open("tokens.json", "w"))
         elif self.tokens["expires_at"] - time() < 60 or str(scope) not in self.tokens["scope"]: #Refresh scope
             token = self.get_new_token(scope, True)
             token["expires_at"] = time() + token["expires_in"]
