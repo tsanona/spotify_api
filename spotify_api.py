@@ -9,7 +9,8 @@ from time import time
 from os import path
 
 class Auth(object):
-    def __init__(self, credentials:dict, tokens_loc:str = None):
+    def __init__(self, credentials:str, tokens_loc:str = None):
+        credentials = json.load(open(credentials))
         self.session = Session()
         self.user = credentials["user"]
         self.client_id = credentials["client_id"]
@@ -56,7 +57,7 @@ class Auth(object):
             token = self.get_new_token(scope, False)
             self.tokens = token
             json.dump(token, open("tokens.json", "w"))
-        elif self.tokens["expires_at"] - time() < 60 or str(scope) not in self.tokens["scope"]: #Refresh scope
+        elif self.tokens["expires_at"] - time() < 60 or str(scope) not in self.tokens["scope"]: #Refresh scope #WARNING if first token has no token then refresh will not work.
             token = self.get_new_token(scope, True)
             token["expires_at"] = time() + token["expires_in"]
             self.tokens = token
@@ -96,8 +97,9 @@ class Api(object):
     
     def _request(self, request_type, url:str, scope=None, params=None, data=None):
         params = self._parse_params(params) if params else None
+        data = json.dumps(data) if data else None
         token = self.auth.get_token(scope)
-        return self.session.request(request_type, self.base_url + url, params=params, data=data ,headers={'Authorization': f'{token["token_type"]} {token["access_token"]}'})
+        return self.session.request(request_type, self.base_url + url, params=params, data=data, headers={'Authorization': f'{token["token_type"]} {token["access_token"]}'})
     
     #Albums
     def get_albums(self, album_ids:list, market:str = None):
@@ -675,3 +677,5 @@ class Api(object):
             - user_id: The user’s Spotify user ID.
         """
         return self._request("GET", "users", params={"user_id":user_id})
+
+
